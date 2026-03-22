@@ -1,16 +1,24 @@
-# This is a sample Python script.
+from dotenv import load_dotenv
 
-# Press Ctrl+F5 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press F9 to toggle the breakpoint.
+from src.hh.api import HeadHunterApi
+from src.db.repository import Repository
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+def main():
+    load_dotenv()
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    hh = HeadHunterApi()
+    vacancies = hh.get_vacancies()
+
+    repository = Repository()
+    repository.insert(vacancies)
+
+    print(repository.get_avg_salary())
+    print(repository.get_all_vacancies())
+    print(repository.get_vacancies_with_keyword('водитель'))
+    print(repository.get_vacancies_with_higher_salary())
+    print(repository.get_companies_and_vacancies_count())
+
+
+if __name__ == "__main__":
+    main()
