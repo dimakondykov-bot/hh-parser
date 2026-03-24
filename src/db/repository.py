@@ -2,8 +2,10 @@ from src.db.manager import DBManager
 
 
 class Repository:
-    def __init__(self):
-        self.manager = DBManager()
+    """ Класс для работы с сайтом HH. Принимает вакансии и сохраняет их в таблицы,
+    выполняет аналитические SQL‑запросы."""
+    def __init__(self, manager):
+        self.manager = manager
         self.cur = self.manager.conn.cursor()
 
     def insert(self, vacancies):
@@ -13,7 +15,7 @@ class Repository:
         vacancy_data = []
 
         for item in vacancies:
-            # --- Работодатель ---
+            # Работодатель
             employer = item.get("employer") or item.get("employeer") or {}
             employer_id = employer.get("id")
 
@@ -24,19 +26,19 @@ class Repository:
                     employer.get("trusted")
                 ))
 
-            # --- Описание ---
+            # Описание
             snippet = item.get("snippet") or {}
             responsibility = snippet.get("responsibility") or ""
             requirement = snippet.get("requirement") or ""
             description = f"{responsibility} {requirement}".strip()
 
-            # --- Зарплата ---
+            #  Зарплата
             salary = item.get("salary") or {}
             salary_min = salary.get("from")
             salary_max = salary.get("to")
             currency = salary.get("currency")
 
-            # --- Вакансия ---
+            # Вакансия
             vacancy_data.append((
                 item.get("id"),
                 employer_id,
@@ -50,7 +52,7 @@ class Repository:
                 item.get("published_at")
             ))
 
-        # Сохраняем работодателей
+        # Сохраняем работодателей в таблицу
         if employer_data:
             self.cur.executemany(
                 """
@@ -61,7 +63,7 @@ class Repository:
                 employer_data
             )
 
-        # Сохраняем вакансии
+        # Сохраняем вакансии в таблицу
         if vacancy_data:
             self.cur.executemany(
                 """
@@ -78,9 +80,10 @@ class Repository:
 
         self.manager.conn.commit()
 
-    # --- Методы из ТЗ ---
+    # Методы из ТЗ
 
     def get_companies_and_vacancies_count(self):
+        """ Возвращает список компаний и количество вакансий у каждой."""
         self.cur.execute(
             """
             SELECT e.name, COUNT(v.id)
@@ -93,6 +96,7 @@ class Repository:
         return self.cur.fetchall()
 
     def get_all_vacancies(self):
+        """ Считает среднюю зарплату по формуле:"""
         self.cur.execute(
             """
             SELECT e.name,
@@ -107,6 +111,7 @@ class Repository:
         return self.cur.fetchall()
 
     def get_avg_salary(self):
+        """ Считает среднюю зарплату """
         self.cur.execute(
             """
             SELECT AVG((salary_min + salary_max) / 2.0)
@@ -119,6 +124,7 @@ class Repository:
         return row[0] if row else None
 
     def get_vacancies_with_higher_salary(self):
+        """ Возвращает вакансии, у которых средняя зарплата выше средней по базе. """
         self.cur.execute(
             """
             SELECT e.name,
@@ -138,6 +144,7 @@ class Repository:
         return self.cur.fetchall()
 
     def get_vacancies_with_keyword(self, keyword):
+        """ Ищет вакансии, где название содержит ключевое слово (регистр игнорируется). """
         self.cur.execute(
             """
             SELECT e.name,
